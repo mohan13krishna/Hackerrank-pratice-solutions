@@ -1,0 +1,60 @@
+class MovieRentingSystem {
+    
+    private Map<Integer, TreeSet<int[]>> movieToAvailableShops;
+    private Map<List<Integer>, Integer> priceMap;
+    private TreeSet<int[]> rentedMovies;
+
+    public MovieRentingSystem(int n, int[][] entries) {
+        movieToAvailableShops = new HashMap<>();
+        priceMap = new HashMap<>();
+        rentedMovies = new TreeSet<>((a, b) -> {
+            if (a[0] != b[0]) return a[0] - b[0]; 
+            if (a[1] != b[1]) return a[1] - b[1]; 
+            return a[2] - b[2]; 
+        });
+
+        for (int[] entry : entries) {
+            int shop = entry[0], movie = entry[1], price = entry[2];
+            priceMap.put(Arrays.asList(shop, movie), price);
+            movieToAvailableShops
+                .computeIfAbsent(movie, k -> new TreeSet<>((a, b) -> {
+                    if (a[0] != b[0]) return a[0] - b[0]; 
+                    return a[1] - b[1]; 
+                }))
+                .add(new int[]{price, shop});
+        }
+    }
+
+    public List<Integer> search(int movie) {
+        List<Integer> result = new ArrayList<>();
+        if (!movieToAvailableShops.containsKey(movie)) return result;
+
+        for (int[] entry : movieToAvailableShops.get(movie)) {
+            result.add(entry[1]);
+            if (result.size() == 5) break;
+        }
+        return result;
+    }
+
+    public void rent(int shop, int movie) {
+        int price = priceMap.get(Arrays.asList(shop, movie));
+        movieToAvailableShops.get(movie).remove(new int[]{price, shop});
+        rentedMovies.add(new int[]{price, shop, movie});
+    }
+
+    public void drop(int shop, int movie) {
+        int price = priceMap.get(Arrays.asList(shop, movie));
+        rentedMovies.remove(new int[]{price, shop, movie});
+        movieToAvailableShops.get(movie).add(new int[]{price, shop});
+    }
+
+    public List<List<Integer>> report() {
+        List<List<Integer>> result = new ArrayList<>();
+        int count = 0;
+        for (int[] entry : rentedMovies) {
+            result.add(Arrays.asList(entry[1], entry[2])); 
+            if (++count == 5) break;
+        }
+        return result;
+    }
+}
